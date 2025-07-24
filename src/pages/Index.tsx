@@ -116,11 +116,8 @@ const Index = () => {
             Intelligent Cafe Discovery
           </Badge>
           
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 animate-slide-up">
-            Find Your Perfect
-            <span className="block bg-gradient-to-r from-golden-hour to-cream bg-clip-text text-transparent">
-              Cafe Experience
-            </span>
+          <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-golden-hour to-cream bg-clip-text text-transparent mb-6 animate-slide-up">
+            CAFE ANALYZER
           </h1>
           
           <p className="text-xl md:text-2xl text-cream/90 mb-8 animate-slide-up" style={{ animationDelay: "0.2s" }}>
