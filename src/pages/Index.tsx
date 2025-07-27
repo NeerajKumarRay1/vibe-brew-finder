@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SearchFilters } from "@/components/SearchFilters";
 import { CafeCard } from "@/components/CafeCard";
-import { Coffee, MapPin, Star, Users, ArrowRight, Sparkles } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Coffee, MapPin, Star, Users, ArrowRight, Sparkles, User, LogOut } from "lucide-react";
 import heroImage from "@/assets/hero-cafe.jpg";
 import cafe1 from "@/assets/cafe-1.jpg";
 import cafe2 from "@/assets/cafe-2.jpg";
@@ -64,6 +67,7 @@ const mockCafes = [
 const Index = () => {
   const [filters, setFilters] = useState<any>({});
   const [filteredCafes, setFilteredCafes] = useState(mockCafes);
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     // Simple filtering logic for demo
@@ -102,6 +106,40 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="absolute top-0 left-0 right-0 z-20 p-6">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <Link to="/" className="text-2xl font-bold text-cream">
+            CAFE ANALYZER
+          </Link>
+          
+          <div className="flex items-center gap-4">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-cream hover:bg-white/10">
+                    <User className="w-4 h-4 mr-2" />
+                    {user.email}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={signOut}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline" className="border-cream text-cream hover:bg-cream hover:text-coffee-bean">
+                  Sign In
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div 
