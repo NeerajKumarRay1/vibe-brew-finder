@@ -107,9 +107,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="absolute top-0 left-0 right-0 z-20 p-6">
+      <nav className="absolute top-0 left-0 right-0 z-20 p-6 bg-gradient-to-r from-coffee-bean/80 via-coffee-bean/60 to-transparent backdrop-blur-sm">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold text-cream">
+          <Link to="/" className="text-2xl font-bold text-golden-hour drop-shadow-lg">
             CAFE ANALYZER
           </Link>
           
@@ -117,12 +117,12 @@ const Index = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-cream hover:bg-white/10">
+                  <Button variant="ghost" className="text-cream hover:bg-white/20 drop-shadow-md backdrop-blur-sm">
                     <User className="w-4 h-4 mr-2" />
                     {user.email}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-sm">
                   <DropdownMenuItem onClick={signOut}>
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
@@ -131,7 +131,10 @@ const Index = () => {
               </DropdownMenu>
             ) : (
               <Link to="/auth">
-                <Button variant="outline" className="border-cream text-cream hover:bg-cream hover:text-coffee-bean">
+                <Button 
+                  variant="outline" 
+                  className="border-2 border-golden-hour text-golden-hour hover:bg-golden-hour hover:text-coffee-bean drop-shadow-md backdrop-blur-sm bg-white/10 font-semibold"
+                >
                   Sign In
                 </Button>
               </Link>
