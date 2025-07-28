@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,102 +7,39 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { SearchFilters } from "@/components/SearchFilters";
 import { CafeCard } from "@/components/CafeCard";
 import { useAuth } from "@/hooks/useAuth";
-import { Coffee, MapPin, Star, Users, ArrowRight, Sparkles, User, LogOut } from "lucide-react";
+import { useCafes, useUserLocation } from "@/hooks/useCafes";
+import { toast } from "@/hooks/use-toast";
+import { Coffee, MapPin, Star, Users, ArrowRight, Sparkles, User, LogOut, Heart } from "lucide-react";
 import heroImage from "@/assets/hero-cafe.jpg";
-import cafe1 from "@/assets/cafe-1.jpg";
-import cafe2 from "@/assets/cafe-2.jpg";
-import cafe3 from "@/assets/cafe-3.jpg";
-
-const mockCafes = [
-  {
-    id: "1",
-    name: "Artisan Coffee Co.",
-    image: cafe1,
-    rating: 4.8,
-    reviewCount: 342,
-    distance: "0.3 miles",
-    address: "123 Coffee Street, Downtown",
-    priceRange: "$$",
-    isOpen: true,
-    openUntil: "9:00 PM",
-    wifiSpeed: "Fast",
-    atmosphere: ["Cozy", "Work-friendly"],
-    specialties: ["Specialty Roast", "Fresh Pastries"],
-    crowdLevel: "Medium" as const,
-  },
-  {
-    id: "2", 
-    name: "The Reading Nook",
-    image: cafe2,
-    rating: 4.6,
-    reviewCount: 198,
-    distance: "0.5 miles",
-    address: "456 Book Avenue, Arts District",
-    priceRange: "$",
-    isOpen: true,
-    openUntil: "8:00 PM",
-    wifiSpeed: "Moderate",
-    atmosphere: ["Quiet", "Bookstore"],
-    specialties: ["Local Roaster", "Book Browse"],
-    crowdLevel: "Low" as const,
-  },
-  {
-    id: "3",
-    name: "Modern Grind",
-    image: cafe3,
-    rating: 4.7,
-    reviewCount: 287,
-    distance: "0.8 miles", 
-    address: "789 Tech Plaza, Innovation Hub",
-    priceRange: "$$$",
-    isOpen: false,
-    openUntil: "Closed",
-    wifiSpeed: "Ultra Fast",
-    atmosphere: ["Modern", "Minimalist"],
-    specialties: ["Cold Brew", "Vegan Options"],
-    crowdLevel: "High" as const,
-  },
-];
 
 const Index = () => {
-  const [filters, setFilters] = useState<any>({});
-  const [filteredCafes, setFilteredCafes] = useState(mockCafes);
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { location, getCurrentLocation } = useUserLocation();
+  const [filters, setFilters] = useState<any>({});
+  
+  // Use real cafe data from database
+  const { cafes, loading, error } = useCafes({
+    ...filters,
+    userLatitude: location?.latitude,
+    userLongitude: location?.longitude,
+  });
 
-  useEffect(() => {
-    // Simple filtering logic for demo
-    let filtered = mockCafes;
-    
-    if (filters.moods?.length > 0) {
-      filtered = filtered.filter(cafe => 
-        filters.moods.some((mood: string) => {
-          switch (mood) {
-            case "focus": return cafe.atmosphere.includes("Quiet") || cafe.atmosphere.includes("Work-friendly");
-            case "social": return cafe.crowdLevel === "Medium" || cafe.crowdLevel === "High";
-            case "romantic": return cafe.atmosphere.includes("Cozy");
-            case "business": return cafe.atmosphere.includes("Modern") || cafe.wifiSpeed === "Ultra Fast";
-            case "chill": return cafe.atmosphere.includes("Cozy");
-            case "creative": return cafe.atmosphere.includes("Bookstore") || cafe.atmosphere.includes("Arts");
-            default: return true;
-          }
-        })
-      );
-    }
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed out successfully",
+      description: "Come back soon!",
+    });
+  };
 
-    if (filters.budget) {
-      filtered = filtered.filter(cafe => {
-        switch (filters.budget) {
-          case "low": return cafe.priceRange === "$";
-          case "medium": return cafe.priceRange === "$$";
-          case "high": return cafe.priceRange === "$$$";
-          case "premium": return cafe.priceRange === "$$$$";
-          default: return true;
-        }
-      });
-    }
-
-    setFilteredCafes(filtered);
-  }, [filters]);
+  const handleFindNearMe = () => {
+    getCurrentLocation();
+    toast({
+      title: "Finding cafes near you",
+      description: "Allow location access to see nearby cafes",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -123,7 +60,11 @@ const Index = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-sm">
-                  <DropdownMenuItem onClick={signOut}>
+                  <DropdownMenuItem onClick={() => navigate('/favorites')}>
+                    <Heart className="w-4 h-4 mr-2" />
+                    Favorites
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
@@ -169,6 +110,7 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: "0.4s" }}>
             <Button 
               size="lg" 
+              onClick={handleFindNearMe}
               className="bg-golden-hour text-coffee-bean hover:bg-cream text-lg px-8 py-6 shadow-warm hover:scale-105 transition-all duration-300"
             >
               <MapPin className="w-5 h-5 mr-2" />
@@ -177,9 +119,10 @@ const Index = () => {
             <Button 
               size="lg" 
               variant="outline" 
+              onClick={() => document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' })}
               className="border-2 border-cream text-cream hover:bg-cream hover:text-coffee-bean text-lg px-8 py-6 backdrop-blur-sm bg-white/10"
             >
-              Learn More
+              Explore All Cafes
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
@@ -203,7 +146,7 @@ const Index = () => {
       </section>
 
       {/* Search Section */}
-      <section className="py-16 px-6 bg-latte-light">
+      <section id="search-section" className="py-16 px-6 bg-latte-light">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-coffee-bean mb-4">
@@ -224,10 +167,10 @@ const Index = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-2xl font-bold text-coffee-bean mb-2">
-                {filteredCafes.length} Cafes Found
+                {loading ? "Loading..." : `${cafes.length} Cafes Found`}
               </h3>
               <p className="text-muted-foreground">
-                Sorted by relevance and distance
+                {location ? "Sorted by distance" : "Sorted by rating"}
               </p>
             </div>
             
@@ -243,13 +186,19 @@ const Index = () => {
             </div>
           </div>
 
+          {error && (
+            <div className="text-center py-8 text-red-600">
+              <p>Error loading cafes: {error}</p>
+            </div>
+          )}
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCafes.map((cafe) => (
+            {!loading && !error && cafes.map((cafe) => (
               <CafeCard key={cafe.id} cafe={cafe} />
             ))}
           </div>
 
-          {filteredCafes.length === 0 && (
+          {!loading && !error && cafes.length === 0 && (
             <Card className="p-8 text-center bg-gradient-card">
               <CardContent className="pt-6">
                 <Coffee className="w-16 h-16 mx-auto text-muted-foreground mb-4" />

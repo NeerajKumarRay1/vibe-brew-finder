@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      cafes: {
+        Row: {
+          address: string
+          amenities: string[] | null
+          atmosphere: string[] | null
+          created_at: string
+          crowd_level: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_open: boolean | null
+          latitude: number
+          longitude: number
+          name: string
+          opening_hours: Json | null
+          phone: string | null
+          price_range: string
+          rating: number | null
+          review_count: number | null
+          specialties: string[] | null
+          updated_at: string
+          website: string | null
+          wifi_speed: string | null
+        }
+        Insert: {
+          address: string
+          amenities?: string[] | null
+          atmosphere?: string[] | null
+          created_at?: string
+          crowd_level?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_open?: boolean | null
+          latitude: number
+          longitude: number
+          name: string
+          opening_hours?: Json | null
+          phone?: string | null
+          price_range: string
+          rating?: number | null
+          review_count?: number | null
+          specialties?: string[] | null
+          updated_at?: string
+          website?: string | null
+          wifi_speed?: string | null
+        }
+        Update: {
+          address?: string
+          amenities?: string[] | null
+          atmosphere?: string[] | null
+          created_at?: string
+          crowd_level?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_open?: boolean | null
+          latitude?: number
+          longitude?: number
+          name?: string
+          opening_hours?: Json | null
+          phone?: string | null
+          price_range?: string
+          rating?: number | null
+          review_count?: number | null
+          specialties?: string[] | null
+          updated_at?: string
+          website?: string | null
+          wifi_speed?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -37,6 +109,76 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          cafe_id: string
+          content: string | null
+          created_at: string
+          id: string
+          rating: number
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cafe_id: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cafe_id?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_cafe_id_fkey"
+            columns: ["cafe_id"]
+            isOneToOne: false
+            referencedRelation: "cafes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_favorites: {
+        Row: {
+          cafe_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          cafe_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          cafe_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_cafe_id_fkey"
+            columns: ["cafe_id"]
+            isOneToOne: false
+            referencedRelation: "cafes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
