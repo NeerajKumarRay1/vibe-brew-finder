@@ -127,6 +127,7 @@ export function useUserLocation() {
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [watchId, setWatchId] = useState<number | null>(null);
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -152,10 +153,69 @@ export function useUserLocation() {
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 300000, // 5 minutes
+        maximumAge: 60000, // 1 minute for real-time
       }
     );
   };
 
-  return { location, error, loading, getCurrentLocation };
+  const startWatchingLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by this browser');
+      return;
+    }
+
+    if (watchId) {
+      navigator.geolocation.clearWatch(watchId);
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const id = navigator.geolocation.watchPosition(
+      (position) => {
+        setLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setLoading(false);
+      },
+      (error) => {
+        setError(error.message);
+        setLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000, // 1 minute
+      }
+    );
+
+    setWatchId(id);
+  };
+
+  const stopWatchingLocation = () => {
+    if (watchId) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [watchId]);
+
+  return { 
+    location, 
+    error, 
+    loading, 
+    getCurrentLocation, 
+    startWatchingLocation, 
+    stopWatchingLocation,
+    isWatching: !!watchId 
+  };
 }

@@ -6,24 +6,32 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SearchFilters } from "@/components/SearchFilters";
 import { CafeCard } from "@/components/CafeCard";
+import { LocationPermission } from "@/components/LocationPermission";
 import { useAuth } from "@/hooks/useAuth";
 import { useCafes, useUserLocation } from "@/hooks/useCafes";
+import { useGooglePlaces } from "@/hooks/useGooglePlaces";
 import { toast } from "@/hooks/use-toast";
-import { Coffee, MapPin, Star, Users, ArrowRight, Sparkles, User, LogOut, Heart } from "lucide-react";
+import { Coffee, MapPin, Star, Users, ArrowRight, Sparkles, User, LogOut, Heart, Navigation } from "lucide-react";
 import heroImage from "@/assets/hero-cafe.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { location, getCurrentLocation } = useUserLocation();
+  const { location, startWatchingLocation, stopWatchingLocation, isWatching, getCurrentLocation, error: locationError } = useUserLocation();
+  const { places: googlePlaces, searchNearbyCafes, loading: googleLoading, error: googleError } = useGooglePlaces();
   const [filters, setFilters] = useState<any>({});
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [useRealtimePlaces, setUseRealtimePlaces] = useState(false);
   
   // Use real cafe data from database
-  const { cafes, loading, error } = useCafes({
+  const { cafes: dbCafes, loading, error } = useCafes({
     ...filters,
     userLatitude: location?.latitude,
     userLongitude: location?.longitude,
   });
+
+  // Combine database cafes with Google Places results
+  const cafes = useRealtimePlaces ? googlePlaces : dbCafes;
 
   const handleSignOut = async () => {
     await signOut();
@@ -34,12 +42,40 @@ const Index = () => {
   };
 
   const handleFindNearMe = () => {
-    getCurrentLocation();
+    setShowLocationPrompt(true);
+  };
+
+  const handleLocationGranted = async (latitude: number, longitude: number) => {
+    setShowLocationPrompt(false);
+    setUseRealtimePlaces(true);
+    
+    // Start real-time location tracking
+    startWatchingLocation();
+    
+    // Search for nearby cafes using Google Places
+    await searchNearbyCafes(latitude, longitude, 5000);
+    
     toast({
-      title: "Finding cafes near you",
-      description: "Allow location access to see nearby cafes",
+      title: "Location enabled",
+      description: "Now showing real-time nearby cafes from Google Places",
     });
   };
+
+  const handleLocationDenied = () => {
+    setShowLocationPrompt(false);
+    toast({
+      title: "Location access denied",
+      description: "Showing database cafes instead",
+      variant: "destructive",
+    });
+  };
+
+  // Update Google Places search when location changes
+  useEffect(() => {
+    if (location && useRealtimePlaces) {
+      searchNearbyCafes(location.latitude, location.longitude, 5000);
+    }
+  }, [location, useRealtimePlaces, searchNearbyCafes]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -221,6 +257,47 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Location Permission Modal */}
+      {showLocationPrompt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="max-w-md w-full">
+            <LocationPermission
+              onLocationGranted={handleLocationGranted}
+              onLocationDenied={handleLocationDenied}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Real-time Location Status */}
+      {isWatching && (
+        <div className="fixed bottom-4 right-4 z-40">
+          <Card className="bg-green-50 border-green-200 shadow-lg">
+            <CardContent className="p-3 flex items-center gap-2">
+              <Navigation className="w-4 h-4 text-green-600 animate-pulse" />
+              <span className="text-sm text-green-800 font-medium">
+                Real-time location active
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  stopWatchingLocation();
+                  setUseRealtimePlaces(false);
+                  toast({
+                    title: "Real-time location disabled",
+                    description: "Switched back to database cafes",
+                  });
+                }}
+                className="text-green-600 hover:text-green-800 ml-2"
+              >
+                Disable
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Features Section */}
       <section className="py-16 px-6 bg-gradient-warm">
         <div className="max-w-6xl mx-auto text-center">
@@ -249,10 +326,10 @@ const Index = () => {
                   <MapPin className="w-8 h-8 text-coffee-bean" />
                 </div>
                 <h4 className="text-xl font-semibold text-coffee-bean mb-2">
-                  Location Intelligence
+                  Real-time Location
                 </h4>
                 <p className="text-muted-foreground">
-                  Real-time data on crowd levels, WiFi speed, and amenities to help you choose wisely.
+                  Live tracking with Google Places API to find actual nearby cafes in real-time.
                 </p>
               </CardContent>
             </Card>
