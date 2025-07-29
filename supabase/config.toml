@@ -1,1 +1,4 @@
 project_id = "lfmxgfbgxsspmcsjkeic"
+
+[functions.google-places]
+verify_jwt = false
