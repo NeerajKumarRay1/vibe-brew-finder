@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SearchFilters } from "@/components/SearchFilters";
 import { CafeCard } from "@/components/CafeCard";
+import { EnhancedCafeCard } from "@/components/EnhancedCafeCard";
 import { LocationPermission } from "@/components/LocationPermission";
 import { useAuth } from "@/hooks/useAuth";
 import { useCafes, useUserLocation } from "@/hooks/useCafes";
@@ -52,8 +53,8 @@ const Index = () => {
     // Start real-time location tracking
     startWatchingLocation();
     
-    // Search for nearby cafes using Google Places
-    await searchNearbyCafes(latitude, longitude, 5000);
+    // Search for nearby cafes using Google Places - 3km radius as requested
+    await searchNearbyCafes(latitude, longitude, 3000);
     
     toast({
       title: "Location enabled",
@@ -70,12 +71,22 @@ const Index = () => {
     });
   };
 
-  // Update Google Places search when location changes
+  // Update Google Places search when location changes - use 3km radius as requested
   useEffect(() => {
     if (location && useRealtimePlaces) {
-      searchNearbyCafes(location.latitude, location.longitude, 5000);
+      searchNearbyCafes(location.latitude, location.longitude, 3000);
     }
   }, [location, useRealtimePlaces, searchNearbyCafes]);
+
+  // Start watching location for authenticated users when they use real-time places
+  useEffect(() => {
+    if (user && useRealtimePlaces && location) {
+      startWatchingLocation();
+      return () => {
+        stopWatchingLocation();
+      };
+    }
+  }, [user, useRealtimePlaces, location, startWatchingLocation, stopWatchingLocation]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -230,7 +241,12 @@ const Index = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {!loading && !error && cafes.map((cafe) => (
-              <CafeCard key={cafe.id} cafe={cafe} />
+              <EnhancedCafeCard 
+                key={cafe.id} 
+                cafe={cafe} 
+                userLocation={location} 
+                showDistance={!!location}
+              />
             ))}
           </div>
 
