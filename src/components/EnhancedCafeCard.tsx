@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Navigation, Heart, ExternalLink, Clock, Users, Wifi, DollarSign } from 'lucide-react';
+import { MapPin, Navigation, Heart, ExternalLink, Clock, Users, Wifi, DollarSign, Eye } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useNavigate } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
 
 type Cafe = Database['public']['Tables']['cafes']['Row'] & { distance?: number };
@@ -15,7 +15,7 @@ interface EnhancedCafeCardProps {
 }
 
 export function EnhancedCafeCard({ cafe, userLocation, showDistance = true }: EnhancedCafeCardProps) {
-  const [showingDistance, setShowingDistance] = useState(false);
+  const navigate = useNavigate();
   const { toggleFavorite, isFavorited } = useFavorites();
   const isCurrentlyFavorited = isFavorited(cafe.id);
 
@@ -23,8 +23,8 @@ export function EnhancedCafeCard({ cafe, userLocation, showDistance = true }: En
     await toggleFavorite(cafe.id);
   };
 
-  const handleInterested = () => {
-    setShowingDistance(true);
+  const handleViewDetails = () => {
+    navigate(`/cafe/${cafe.id}`);
   };
 
   const handleOpenInMaps = () => {
@@ -106,11 +106,6 @@ export function EnhancedCafeCard({ cafe, userLocation, showDistance = true }: En
               <Navigation className="w-4 h-4 mr-2 text-primary" />
               <span className="font-medium">{formatDistance(cafe.distance)} away</span>
             </div>
-            {showingDistance && (
-              <Badge variant="secondary" className="bg-golden-hour text-coffee-bean">
-                Distance shown
-              </Badge>
-            )}
           </div>
         )}
 
@@ -166,11 +161,11 @@ export function EnhancedCafeCard({ cafe, userLocation, showDistance = true }: En
         {/* Action Buttons */}
         <div className="flex gap-2 pt-2">
           <Button 
-            onClick={handleInterested}
-            className="flex-1 bg-golden-hour text-coffee-bean hover:bg-cream"
-            disabled={showingDistance}
+            onClick={handleViewDetails}
+            className="flex-1 bg-coffee-bean text-cream hover:bg-espresso-dark"
           >
-            {showingDistance ? 'Interested ✓' : 'Interested'}
+            <Eye className="w-4 h-4 mr-2" />
+            View Details
           </Button>
           
           <Button 
