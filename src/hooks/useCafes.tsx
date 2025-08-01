@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/integrations/supabase/types';
 
 type Cafe = Database['public']['Tables']['cafes']['Row'];
 
@@ -127,95 +127,137 @@ export function useUserLocation() {
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [watchId, setWatchId] = useState<number | null>(null);
+  const [isWatching, setIsWatching] = useState(false);
+  const watchIdRef = useRef<number | null>(null);
 
-  const getCurrentLocation = () => {
+  const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by this browser');
-      return;
+      const errorMsg = 'Geolocation is not supported by this browser';
+      setError(errorMsg);
+      return Promise.reject(new Error(errorMsg));
     }
 
     setLoading(true);
     setError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        setLoading(false);
-      },
-      (error) => {
-        setError(error.message);
-        setLoading(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000, // 1 minute for real-time
-      }
-    );
-  };
+    return new Promise<{ latitude: number; longitude: number }>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const newLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          setLocation(newLocation);
+          setLoading(false);
+          console.log('Location detected:', newLocation);
+          resolve(newLocation);
+        },
+        (error) => {
+          let errorMessage = 'Failed to get your location';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Location access denied. Please enable location permissions.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information is unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timed out.';
+              break;
+          }
+          
+          console.error('Location error:', errorMessage, error);
+          setError(errorMessage);
+          setLoading(false);
+          reject(new Error(errorMessage));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 60000,
+        }
+      );
+    });
+  }, []);
 
-  const startWatchingLocation = () => {
+  const setManualLocation = useCallback((latitude: number, longitude: number) => {
+    const newLocation = { latitude, longitude };
+    setLocation(newLocation);
+    setError(null);
+    console.log('Manual location set:', newLocation);
+  }, []);
+
+  const startWatchingLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by this browser');
       return;
     }
 
-    if (watchId) {
-      navigator.geolocation.clearWatch(watchId);
-    }
+    if (isWatching) return;
 
-    setLoading(true);
-    setError(null);
-
-    const id = navigator.geolocation.watchPosition(
+    setIsWatching(true);
+    watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
-        setLocation({
+        const newLocation = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-        });
+        };
+        setLocation(newLocation);
+        setError(null);
         setLoading(false);
+        console.log('Location updated:', newLocation);
       },
       (error) => {
-        setError(error.message);
+        let errorMessage = 'Failed to track your location';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location access denied.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information is unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out.';
+            break;
+        }
+        
+        console.error('Location tracking error:', errorMessage, error);
+        setError(errorMessage);
         setLoading(false);
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000, // 1 minute
+        timeout: 15000,
+        maximumAge: 30000,
       }
     );
+  }, [isWatching]);
 
-    setWatchId(id);
-  };
-
-  const stopWatchingLocation = () => {
-    if (watchId) {
-      navigator.geolocation.clearWatch(watchId);
-      setWatchId(null);
+  const stopWatchingLocation = useCallback(() => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      setIsWatching(false);
+      console.log('Stopped watching location');
     }
-  };
+  }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
-      }
+      stopWatchingLocation();
     };
-  }, [watchId]);
+  }, [stopWatchingLocation]);
 
-  return { 
-    location, 
-    error, 
-    loading, 
-    getCurrentLocation, 
-    startWatchingLocation, 
+  return {
+    location,
+    error,
+    loading,
+    isWatching,
+    getCurrentLocation,
+    setManualLocation,
+    startWatchingLocation,
     stopWatchingLocation,
-    isWatching: !!watchId 
   };
 }

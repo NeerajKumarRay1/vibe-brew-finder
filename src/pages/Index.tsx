@@ -8,21 +8,23 @@ import { SearchFilters } from "@/components/SearchFilters";
 import { CafeCard } from "@/components/CafeCard";
 import { EnhancedCafeCard } from "@/components/EnhancedCafeCard";
 import { LocationPermission } from "@/components/LocationPermission";
+import { LocationSelector } from "@/components/LocationSelector";
 import { useAuth } from "@/hooks/useAuth";
 import { useCafes, useUserLocation } from "@/hooks/useCafes";
 import { useGooglePlaces } from "@/hooks/useGooglePlaces";
 import { toast } from "@/hooks/use-toast";
-import { Coffee, MapPin, Star, Users, ArrowRight, Sparkles, User, LogOut, Heart, Navigation } from "lucide-react";
+import { Coffee, MapPin, Star, Users, ArrowRight, Sparkles, User, LogOut, Heart, Navigation, AlertCircle } from "lucide-react";
 import heroImage from "@/assets/hero-cafe.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { location, startWatchingLocation, stopWatchingLocation, isWatching, getCurrentLocation, error: locationError } = useUserLocation();
+  const { location, setManualLocation, startWatchingLocation, stopWatchingLocation, isWatching, error: locationError } = useUserLocation();
   const { places: googlePlaces, searchNearbyCafes, loading: googleLoading, error: googleError } = useGooglePlaces();
   const [filters, setFilters] = useState<any>({});
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [useRealtimePlaces, setUseRealtimePlaces] = useState(false);
+  const [selectedLocationName, setSelectedLocationName] = useState<string>('');
   
   // Use real cafe data from database
   const { cafes: dbCafes, loading, error } = useCafes({
@@ -43,30 +45,46 @@ const Index = () => {
   };
 
   const handleFindNearMe = () => {
-    setShowLocationPrompt(true);
+    setShowLocationSelector(true);
   };
 
-  const handleLocationGranted = async (latitude: number, longitude: number) => {
-    setShowLocationPrompt(false);
+  const handleLocationSelected = async (latitude: number, longitude: number, address?: string) => {
+    console.log('Location selected:', { latitude, longitude, address });
+    setShowLocationSelector(false);
     setUseRealtimePlaces(true);
+    setSelectedLocationName(address || 'Selected Location');
     
-    // Start real-time location tracking
-    startWatchingLocation();
+    // Set the location manually
+    setManualLocation(latitude, longitude);
     
-    // Search for nearby cafes using Google Places - 3km radius as requested
+    // Start real-time location tracking if it's current location
+    if (address === 'Current Location') {
+      startWatchingLocation();
+    }
+    
+    // Search for nearby cafes using Google Places
     await searchNearbyCafes(latitude, longitude, 3000);
     
     toast({
-      title: "Location enabled",
-      description: "Now showing real-time nearby cafes from Google Places",
+      title: "Location set successfully",
+      description: `Now showing cafes near ${address || 'your selected location'}`,
+    });
+  };
+
+  const handleLocationError = (error: string) => {
+    console.error('Location error:', error);
+    toast({
+      title: "Location Error",
+      description: error,
+      variant: "destructive",
     });
   };
 
   const handleLocationDenied = () => {
-    setShowLocationPrompt(false);
+    setShowLocationSelector(false);
     toast({
       title: "Location access denied",
-      description: "Showing database cafes instead",
+      description: "You can still search for cafes by entering a location manually",
       variant: "destructive",
     });
   };
@@ -194,48 +212,105 @@ const Index = () => {
 
       {/* Search Section */}
       <section id="search-section" className="py-16 px-6 bg-latte-light">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-coffee-bean mb-4">
-              Discover Your Ideal Cafe
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Use our intelligent filters to find cafes that perfectly match your current needs and preferences.
-            </p>
-          </div>
+        {/* Location and Search Section */}
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Location Selector */}
+          {!location && (
+            <LocationSelector
+              onLocationSelected={handleLocationSelected}
+              onLocationError={handleLocationError}
+              currentLocation={location}
+              loading={googleLoading}
+            />
+          )}
 
+          {/* Current Location Status */}
+          {location && (
+            <div className="bg-gradient-card rounded-lg p-4 border border-border">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <Navigation className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-coffee-bean">
+                      {selectedLocationName || 'Location Set'}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {useRealtimePlaces ? `Found ${cafes.length} nearby cafes` : 'Showing database cafes'}
+                      {isWatching && ' • Live tracking active'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowLocationSelector(true);
+                    }}
+                    className="border-golden-hour text-coffee-bean hover:bg-golden-hour"
+                  >
+                    Change Location
+                  </Button>
+                  {isWatching && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={stopWatchingLocation}
+                      className="border-red-300 text-red-600 hover:bg-red-50"
+                    >
+                      Stop Tracking
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Search Filters */}
           <SearchFilters onFiltersChange={setFilters} />
         </div>
       </section>
 
       {/* Results Section */}
       <section className="py-16 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Results Header */}
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-2xl font-bold text-coffee-bean mb-2">
-                {loading ? "Loading..." : `${cafes.length} Cafes Found`}
+              <h3 className="text-2xl font-bold text-coffee-bean">
+                {useRealtimePlaces ? 'Nearby Cafes' : 'Featured Cafes'}
               </h3>
               <p className="text-muted-foreground">
-                {location ? "Sorted by distance" : "Sorted by rating"}
+                {loading || googleLoading ? 'Searching...' : 
+                 useRealtimePlaces ? `Found ${cafes.length} cafes within 3km` : 
+                 `Showing ${cafes.length} curated cafes`}
               </p>
             </div>
             
-            <div className="flex items-center gap-4">
-              <Badge className="bg-cream text-coffee-bean">
-                <Star className="w-3 h-3 mr-1" />
-                Top Rated
-              </Badge>
-              <Badge className="bg-golden-hour text-coffee-bean">
-                <Users className="w-3 h-3 mr-1" />
-                Popular Now
-              </Badge>
-            </div>
+            {!location && (
+              <Button 
+                onClick={handleFindNearMe}
+                className="bg-golden-hour text-coffee-bean hover:bg-cream"
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                Find Near Me
+              </Button>
+            )}
           </div>
 
-          {error && (
-            <div className="text-center py-8 text-red-600">
-              <p>Error loading cafes: {error}</p>
+          {/* Error Messages */}
+          {(error || googleError || locationError) && (
+            <div className="mb-6">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-red-800">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="font-medium">
+                    {error || googleError || locationError}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -273,14 +348,24 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Location Permission Modal */}
-      {showLocationPrompt && (
+      {/* Location Selector Modal */}
+      {showLocationSelector && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="max-w-md w-full">
-            <LocationPermission
-              onLocationGranted={handleLocationGranted}
-              onLocationDenied={handleLocationDenied}
-            />
+            <div className="relative">
+              <button
+                onClick={() => setShowLocationSelector(false)}
+                className="absolute -top-2 -right-2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+              <LocationSelector
+                onLocationSelected={handleLocationSelected}
+                onLocationError={handleLocationError}
+                currentLocation={location}
+                loading={googleLoading}
+              />
+            </div>
           </div>
         </div>
       )}

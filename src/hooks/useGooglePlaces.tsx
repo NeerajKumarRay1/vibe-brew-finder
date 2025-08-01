@@ -30,7 +30,8 @@ export function useGooglePlaces() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const searchNearbyCafes = useCallback(async (latitude: number, longitude: number, radius: number = 5000) => {
+  const searchNearbyCafes = useCallback(async (latitude: number, longitude: number, radius: number = 3000) => {
+    console.log('Starting Google Places search:', { latitude, longitude, radius });
     setLoading(true);
     setError(null);
 
@@ -39,22 +40,34 @@ export function useGooglePlaces() {
         body: { latitude, longitude, radius }
       });
 
+      console.log('Google Places response:', { data, funcError });
+
       if (funcError) {
+        console.error('Function error:', funcError);
         throw new Error(funcError.message || 'Failed to search nearby cafes');
       }
 
-      if (data.error) {
+      if (data?.error) {
+        console.error('API error:', data.error);
         throw new Error(data.error);
       }
 
-      if (data.status === 'OK') {
+      if (data?.status === 'OK') {
+        console.log('Found cafes:', data.results?.length || 0);
         setPlaces(data.results || []);
+      } else if (data?.status === 'ZERO_RESULTS') {
+        console.log('No cafes found in this area');
+        setPlaces([]);
+        setError('No cafes found in this area. Try expanding your search radius.');
       } else {
-        throw new Error(`Google Places API error: ${data.status}`);
+        console.error('Unexpected status:', data?.status);
+        throw new Error(`Google Places API error: ${data?.status || 'Unknown error'}`);
       }
     } catch (err) {
       console.error('Google Places search error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to search nearby cafes');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to search nearby cafes';
+      setError(errorMessage);
+      setPlaces([]);
     } finally {
       setLoading(false);
     }
