@@ -1,17 +1,19 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Star, MapPin, Clock, Wifi, Phone, Globe, Heart, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Clock, Wifi, Phone, Globe, Heart, MessageSquare, Coffee, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/hooks/useAuth';
 import { useReviews, useCreateReview } from '@/hooks/useReviews';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useMenuItems } from '@/hooks/useMenuItems';
 
 type Cafe = Database['public']['Tables']['cafes']['Row'];
 
@@ -28,6 +30,7 @@ export default function CafeDetail() {
   const { reviews, refetch: refetchReviews } = useReviews(id || '');
   const { createReview, loading: reviewLoading } = useCreateReview();
   const { toggleFavorite, isFavorited } = useFavorites();
+  const { menuItems, loading: menuLoading, getMenuByCategory } = useMenuItems(id || '');
 
   useEffect(() => {
     if (id) {
@@ -190,90 +193,160 @@ export default function CafeDetail() {
               </CardContent>
             </Card>
 
-            {/* Reviews Section */}
+            {/* Tabs for Reviews and Menu */}
             <Card className="bg-gradient-card border-border">
-              <CardHeader>
-                <CardTitle className="text-coffee-bean flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  Reviews ({reviews.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Write Review */}
-                {user && (
-                  <div className="border-b border-border pb-6">
-                    <h4 className="font-medium text-coffee-bean mb-4">Write a Review</h4>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium text-coffee-bean">Rating</label>
-                        <div className="flex gap-1 mt-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`w-6 h-6 cursor-pointer ${
-                                star <= rating ? 'fill-golden-hour text-golden-hour' : 'text-muted-foreground'
-                              }`}
-                              onClick={() => setRating(star)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <Input
-                        placeholder="Review title (optional)"
-                        value={reviewTitle}
-                        onChange={(e) => setReviewTitle(e.target.value)}
-                      />
-                      <Textarea
-                        placeholder="Share your experience..."
-                        value={reviewContent}
-                        onChange={(e) => setReviewContent(e.target.value)}
-                        rows={3}
-                      />
-                      <Button 
-                        onClick={handleSubmitReview} 
-                        disabled={reviewLoading}
-                        className="bg-coffee-bean text-cream hover:bg-espresso-dark"
-                      >
-                        {reviewLoading ? 'Posting...' : 'Post Review'}
-                      </Button>
-                    </div>
-                  </div>
-                )}
+              <Tabs defaultValue="reviews" className="w-full">
+                <CardHeader>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="reviews" className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4" />
+                      Reviews ({reviews.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="menu" className="flex items-center gap-2">
+                      <Coffee className="w-4 h-4" />
+                      Menu ({menuItems.length} items)
+                    </TabsTrigger>
+                  </TabsList>
+                </CardHeader>
 
-                {/* Reviews List */}
-                <div className="space-y-4">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="border border-border rounded-lg p-4 bg-card">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                        <span className="font-medium text-coffee-bean">
-                          Anonymous User
-                        </span>
-                          <div className="flex items-center gap-1">
-                            {Array.from({ length: review.rating }).map((_, i) => (
-                              <Star key={i} className="w-4 h-4 fill-golden-hour text-golden-hour" />
-                            ))}
+                <TabsContent value="reviews">
+                  <CardContent className="space-y-6">
+                    {/* Write Review */}
+                    {user && (
+                      <div className="border-b border-border pb-6">
+                        <h4 className="font-medium text-coffee-bean mb-4">Write a Review</h4>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium text-coffee-bean">Rating</label>
+                            <div className="flex gap-1 mt-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-6 h-6 cursor-pointer ${
+                                    star <= rating ? 'fill-golden-hour text-golden-hour' : 'text-muted-foreground'
+                                  }`}
+                                  onClick={() => setRating(star)}
+                                />
+                              ))}
+                            </div>
                           </div>
+                          <Input
+                            placeholder="Review title (optional)"
+                            value={reviewTitle}
+                            onChange={(e) => setReviewTitle(e.target.value)}
+                          />
+                          <Textarea
+                            placeholder="Share your experience..."
+                            value={reviewContent}
+                            onChange={(e) => setReviewContent(e.target.value)}
+                            rows={3}
+                          />
+                          <Button 
+                            onClick={handleSubmitReview} 
+                            disabled={reviewLoading}
+                            className="bg-coffee-bean text-cream hover:bg-espresso-dark"
+                          >
+                            {reviewLoading ? 'Posting...' : 'Post Review'}
+                          </Button>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(review.created_at).toLocaleDateString()}
-                        </span>
                       </div>
-                      {review.title && (
-                        <h5 className="font-medium text-coffee-bean mb-1">{review.title}</h5>
-                      )}
-                      {review.content && (
-                        <p className="text-muted-foreground">{review.content}</p>
+                    )}
+
+                    {/* Reviews List */}
+                    <div className="space-y-4">
+                      {reviews.map((review) => (
+                        <div key={review.id} className="border border-border rounded-lg p-4 bg-card">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                            <span className="font-medium text-coffee-bean">
+                              Anonymous User
+                            </span>
+                              <div className="flex items-center gap-1">
+                                {Array.from({ length: review.rating }).map((_, i) => (
+                                  <Star key={i} className="w-4 h-4 fill-golden-hour text-golden-hour" />
+                                ))}
+                              </div>
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {review.title && (
+                            <h5 className="font-medium text-coffee-bean mb-1">{review.title}</h5>
+                          )}
+                          {review.content && (
+                            <p className="text-muted-foreground">{review.content}</p>
+                          )}
+                        </div>
+                      ))}
+                      {reviews.length === 0 && (
+                        <p className="text-center text-muted-foreground py-8">
+                          No reviews yet. Be the first to review this cafe!
+                        </p>
                       )}
                     </div>
-                  ))}
-                  {reviews.length === 0 && (
-                    <p className="text-center text-muted-foreground py-8">
-                      No reviews yet. Be the first to review this cafe!
-                    </p>
-                  )}
-                </div>
-              </CardContent>
+                  </CardContent>
+                </TabsContent>
+
+                <TabsContent value="menu">
+                  <CardContent>
+                    {menuLoading ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Loading menu...
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {Object.entries(getMenuByCategory()).map(([category, items]) => (
+                          <div key={category}>
+                            <h3 className="text-lg font-semibold text-coffee-bean mb-4 flex items-center gap-2">
+                              <Coffee className="w-5 h-5 text-golden-hour" />
+                              {category}
+                            </h3>
+                            <div className="grid gap-4">
+                              {items.map((item) => (
+                                <div key={item.id} className="flex items-start gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
+                                  {item.image_url && (
+                                    <div className="flex-shrink-0">
+                                      <img 
+                                        src={item.image_url} 
+                                        alt={item.name}
+                                        className="w-16 h-16 rounded-lg object-cover"
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <h4 className="font-medium text-coffee-bean">{item.name}</h4>
+                                        {item.description && (
+                                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                            {item.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div className="ml-4 text-right">
+                                        <span className="text-lg font-semibold text-coffee-bean flex items-center">
+                                          <DollarSign className="w-4 h-4" />
+                                          {Number(item.price).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                        {menuItems.length === 0 && (
+                          <p className="text-center text-muted-foreground py-8">
+                            Menu not available at this time.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </TabsContent>
+              </Tabs>
             </Card>
           </div>
 
