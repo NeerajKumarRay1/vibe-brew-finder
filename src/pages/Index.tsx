@@ -63,7 +63,7 @@ const Index = () => {
     }
     
     // Search for nearby cafes using Google Places
-    await searchNearbyCafes(latitude, longitude, 3000);
+    await searchNearbyCafes(latitude, longitude, 50000);
     
     toast({
       title: "Location set successfully",
@@ -89,22 +89,24 @@ const Index = () => {
     });
   };
 
-  // Update Google Places search when location changes - use 3km radius as requested
+  // Update Google Places search when location changes - use 50km radius as requested
   useEffect(() => {
     if (location && useRealtimePlaces) {
-      searchNearbyCafes(location.latitude, location.longitude, 3000);
+      searchNearbyCafes(location.latitude, location.longitude, 50000);
     }
   }, [location, useRealtimePlaces, searchNearbyCafes]);
 
-  // Start watching location for authenticated users when they use real-time places
+  // Start watching location for authenticated users when they use real-time places (only once)
   useEffect(() => {
-    if (user && useRealtimePlaces && location) {
+    if (user && useRealtimePlaces && location && !isWatching) {
       startWatchingLocation();
-      return () => {
-        stopWatchingLocation();
-      };
     }
-  }, [user, useRealtimePlaces, location, startWatchingLocation, stopWatchingLocation]);
+    return () => {
+      if (isWatching) {
+        stopWatchingLocation();
+      }
+    };
+  }, [user, useRealtimePlaces, location]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -283,8 +285,8 @@ const Index = () => {
                 {useRealtimePlaces ? 'Nearby Cafes' : 'Featured Cafes'}
               </h3>
               <p className="text-muted-foreground">
-                {loading || googleLoading ? 'Searching...' : 
-                 useRealtimePlaces ? `Found ${cafes.length} cafes within 3km` : 
+                 {loading || googleLoading ? 'Searching...' : 
+                 useRealtimePlaces ? `Found ${cafes.length} cafes within 50km` : 
                  `Showing ${cafes.length} curated cafes`}
               </p>
             </div>

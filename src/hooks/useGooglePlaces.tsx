@@ -30,7 +30,7 @@ export function useGooglePlaces() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const searchNearbyCafes = useCallback(async (latitude: number, longitude: number, radius: number = 3000) => {
+  const searchNearbyCafes = useCallback(async (latitude: number, longitude: number, radius: number = 50000) => {
     console.log('Starting Google Places search:', { latitude, longitude, radius });
     setLoading(true);
     setError(null);
