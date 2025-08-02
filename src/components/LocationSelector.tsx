@@ -31,39 +31,66 @@ export function LocationSelector({
 
     setIsDetecting(true);
     
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setIsDetecting(false);
-        onLocationSelected(
-          position.coords.latitude, 
-          position.coords.longitude,
-          'Current Location'
-        );
-      },
-      (error) => {
-        setIsDetecting(false);
-        let errorMessage = 'Failed to get your location';
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Location access denied. Please enable location permissions.';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable.';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Location request timed out.';
-            break;
+    try {
+      // First try with high accuracy
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setIsDetecting(false);
+          onLocationSelected(
+            position.coords.latitude, 
+            position.coords.longitude,
+            'Current Location'
+          );
+        },
+        (error) => {
+          console.log('High accuracy failed, trying with lower accuracy:', error);
+          
+          // Fallback: try with lower accuracy settings
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setIsDetecting(false);
+              onLocationSelected(
+                position.coords.latitude, 
+                position.coords.longitude,
+                'Current Location'
+              );
+            },
+            (fallbackError) => {
+              setIsDetecting(false);
+              let errorMessage = 'Unable to detect your location';
+              
+              switch (fallbackError.code) {
+                case fallbackError.PERMISSION_DENIED:
+                  errorMessage = 'Location access denied. Please allow location access in your browser settings, then try again.';
+                  break;
+                case fallbackError.POSITION_UNAVAILABLE:
+                  errorMessage = 'Location service unavailable. Please check your device settings or try entering your location manually.';
+                  break;
+                case fallbackError.TIMEOUT:
+                  errorMessage = 'Location detection timed out. Please try again or enter your location manually.';
+                  break;
+              }
+              
+              console.error('Location detection failed:', fallbackError);
+              onLocationError(errorMessage);
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 15000,
+              maximumAge: 300000, // Accept location up to 5 minutes old
+            }
+          );
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 60000,
         }
-        
-        onLocationError(errorMessage);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
-      }
-    );
+      );
+    } catch (error) {
+      setIsDetecting(false);
+      onLocationError('Location detection failed. Please try entering your location manually.');
+    }
   };
 
   const searchManualLocation = async () => {

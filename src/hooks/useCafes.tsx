@@ -141,6 +141,7 @@ export function useUserLocation() {
     setError(null);
 
     return new Promise<{ latitude: number; longitude: number }>((resolve, reject) => {
+      // First attempt with high accuracy
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const newLocation = {
@@ -153,28 +154,50 @@ export function useUserLocation() {
           resolve(newLocation);
         },
         (error) => {
-          let errorMessage = 'Failed to get your location';
+          console.log('High accuracy failed, trying fallback:', error);
           
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Location access denied. Please enable location permissions.';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable.';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Location request timed out.';
-              break;
-          }
-          
-          console.error('Location error:', errorMessage, error);
-          setError(errorMessage);
-          setLoading(false);
-          reject(new Error(errorMessage));
+          // Fallback attempt with lower accuracy
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const newLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              };
+              setLocation(newLocation);
+              setLoading(false);
+              console.log('Location detected (fallback):', newLocation);
+              resolve(newLocation);
+            },
+            (fallbackError) => {
+              let errorMessage = 'Unable to detect your location';
+              
+              switch (fallbackError.code) {
+                case fallbackError.PERMISSION_DENIED:
+                  errorMessage = 'Location access denied. Please enable location permissions in your browser.';
+                  break;
+                case fallbackError.POSITION_UNAVAILABLE:
+                  errorMessage = 'Location service unavailable. Please check your device settings.';
+                  break;
+                case fallbackError.TIMEOUT:
+                  errorMessage = 'Location detection timed out. Please try again.';
+                  break;
+              }
+              
+              console.error('Location error:', errorMessage, fallbackError);
+              setError(errorMessage);
+              setLoading(false);
+              reject(new Error(errorMessage));
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 15000,
+              maximumAge: 300000, // Accept older location data
+            }
+          );
         },
         {
           enableHighAccuracy: true,
-          timeout: 15000,
+          timeout: 8000,
           maximumAge: 60000,
         }
       );
