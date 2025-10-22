@@ -23,6 +23,13 @@ interface GooglePlaceCafe {
   opening_hours: any;
   created_at: string;
   updated_at: string;
+  best_visit_times: any;
+  email: string;
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  menu_url: string;
+  mood_classification: string | null;
 }
 
 export function useGooglePlaces() {

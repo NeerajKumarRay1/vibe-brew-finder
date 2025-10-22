@@ -7,26 +7,59 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
+      cafe_mood_analysis: {
+        Row: {
+          analyzed_at: string
+          cafe_id: string
+          dominant_mood: string | null
+          id: string
+          mood_score: Json | null
+          review_count: number | null
+        }
+        Insert: {
+          analyzed_at?: string
+          cafe_id: string
+          dominant_mood?: string | null
+          id?: string
+          mood_score?: Json | null
+          review_count?: number | null
+        }
+        Update: {
+          analyzed_at?: string
+          cafe_id?: string
+          dominant_mood?: string | null
+          id?: string
+          mood_score?: Json | null
+          review_count?: number | null
+        }
+        Relationships: []
+      }
       cafes: {
         Row: {
           address: string
           amenities: string[] | null
           atmosphere: string[] | null
+          best_visit_times: Json | null
           created_at: string
           crowd_level: string | null
           description: string | null
+          email: string | null
+          facebook: string | null
           id: string
           image_url: string | null
+          instagram: string | null
           is_open: boolean | null
           latitude: number
           longitude: number
+          menu_url: string | null
+          mood_classification: string | null
           name: string
           opening_hours: Json | null
           phone: string | null
@@ -34,6 +67,7 @@ export type Database = {
           rating: number | null
           review_count: number | null
           specialties: string[] | null
+          twitter: string | null
           updated_at: string
           website: string | null
           wifi_speed: string | null
@@ -42,14 +76,20 @@ export type Database = {
           address: string
           amenities?: string[] | null
           atmosphere?: string[] | null
+          best_visit_times?: Json | null
           created_at?: string
           crowd_level?: string | null
           description?: string | null
+          email?: string | null
+          facebook?: string | null
           id?: string
           image_url?: string | null
+          instagram?: string | null
           is_open?: boolean | null
           latitude: number
           longitude: number
+          menu_url?: string | null
+          mood_classification?: string | null
           name: string
           opening_hours?: Json | null
           phone?: string | null
@@ -57,6 +97,7 @@ export type Database = {
           rating?: number | null
           review_count?: number | null
           specialties?: string[] | null
+          twitter?: string | null
           updated_at?: string
           website?: string | null
           wifi_speed?: string | null
@@ -65,14 +106,20 @@ export type Database = {
           address?: string
           amenities?: string[] | null
           atmosphere?: string[] | null
+          best_visit_times?: Json | null
           created_at?: string
           crowd_level?: string | null
           description?: string | null
+          email?: string | null
+          facebook?: string | null
           id?: string
           image_url?: string | null
+          instagram?: string | null
           is_open?: boolean | null
           latitude?: number
           longitude?: number
+          menu_url?: string | null
+          mood_classification?: string | null
           name?: string
           opening_hours?: Json | null
           phone?: string | null
@@ -80,6 +127,7 @@ export type Database = {
           rating?: number | null
           review_count?: number | null
           specialties?: string[] | null
+          twitter?: string | null
           updated_at?: string
           website?: string | null
           wifi_speed?: string | null
@@ -198,6 +246,33 @@ export type Database = {
           },
         ]
       }
+      user_analytics: {
+        Row: {
+          cafe_id: string | null
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          cafe_id?: string | null
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          cafe_id?: string | null
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_favorites: {
         Row: {
           cafe_id: string
@@ -226,6 +301,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          preferred_amenities: string[] | null
+          preferred_atmosphere: string[] | null
+          preferred_price_range: string[] | null
+          preferred_specialties: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preferred_amenities?: string[] | null
+          preferred_atmosphere?: string[] | null
+          preferred_price_range?: string[] | null
+          preferred_specialties?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preferred_amenities?: string[] | null
+          preferred_atmosphere?: string[] | null
+          preferred_price_range?: string[] | null
+          preferred_specialties?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

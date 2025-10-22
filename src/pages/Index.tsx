@@ -9,16 +9,19 @@ import { CafeCard } from "@/components/CafeCard";
 import { EnhancedCafeCard } from "@/components/EnhancedCafeCard";
 import { LocationPermission } from "@/components/LocationPermission";
 import { LocationSelector } from "@/components/LocationSelector";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useCafes, useUserLocation } from "@/hooks/useCafes";
 import { useGooglePlaces } from "@/hooks/useGooglePlaces";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { toast } from "@/hooks/use-toast";
-import { Coffee, MapPin, Star, Users, ArrowRight, Sparkles, User, LogOut, Heart, Navigation, AlertCircle } from "lucide-react";
+import { Coffee, MapPin, Star, Users, ArrowRight, Sparkles, User, LogOut, Heart, Navigation, AlertCircle, BarChart } from "lucide-react";
 import heroImage from "@/assets/hero-cafe.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { trackSearch, trackFilterApplied } = useAnalytics();
   const { location, setManualLocation, startWatchingLocation, stopWatchingLocation, isWatching, error: locationError } = useUserLocation();
   const { places: googlePlaces, searchNearbyCafes, loading: googleLoading, error: googleError } = useGooglePlaces();
   const [filters, setFilters] = useState<any>({});

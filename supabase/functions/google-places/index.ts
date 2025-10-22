@@ -70,6 +70,13 @@ serve(async (req) => {
       phone: '',
       website: '',
       opening_hours: {},
+      best_visit_times: { morning: 0, afternoon: 0, evening: 0, night: 0 },
+      email: '',
+      facebook: '',
+      instagram: '',
+      twitter: '',
+      menu_url: '',
+      mood_classification: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })) || []

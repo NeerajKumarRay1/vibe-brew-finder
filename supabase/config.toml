@@ -2,3 +2,9 @@ project_id = "lfmxgfbgxsspmcsjkeic"
 
 [functions.google-places]
 verify_jwt = false
+
+[functions.analyze-cafe-mood]
+verify_jwt = false
+
+[functions.get-recommendations]
+verify_jwt = true
